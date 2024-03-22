@@ -37,7 +37,8 @@ jobs:
           PEM_KEY: ${{ secrets.PEM_KEY }}
         run: |
           echo $PEM_KEY > connect.pem
-          scp -i connect.pem ${{ secrets.USER}}@${{ secrets.HOST }} a .
+          chmod 400 connect.pem
+          scp -i connect.pem -o StrictHostKeyChecking=no ${{ secrets.USER }}@${{ secrets.HOST }}:a .
 
       - name: Delete the security group
         if: always()
