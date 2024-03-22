@@ -35,9 +35,9 @@ jobs:
         env:
           PEM_KEY: ${{ secrets.PEM_KEY }}
         run: |
-          echo $PEM_KEY > connect.pem
-          chmod 400 connect.pem
-          scp -i connect.pem -o StrictHostKeyChecking=no ${{ secrets.USER }}@${{ secrets.HOST }}:a .
+          echo $PEM_KEY > washenjoy_key.pem
+          chmod 400 washenjoy_key.pem
+          scp -i washenjoy_key.pem -o StrictHostKeyChecking=no ${{ secrets.USER }}@${{ secrets.HOST }}:a .
 
       - name: Delete the security group
         if: always()
