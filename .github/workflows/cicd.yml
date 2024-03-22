@@ -15,6 +15,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+
+      - name: Get public IP
+        id: ip
+        run: echo "::set-output name=ip::$(curl https://ifconfig.me)"
+
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -23,7 +28,8 @@ jobs:
 
       - name: Add SSH access to the security group
         run: |
-          aws ec2 authorize-security-group-ingress --group-id ${{ secrets.SECURITY_GROUP }} --protocol tcp --port 22 --cidr $(curl https://ifconfig.me)/32
+          aws ec2 authorize-security-group-ingress --group-id ${{ secrets.SECURITY_GROUP }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ip }}/32
+        continue-on-error: true
 
       - name: Deploy application
         env:
@@ -36,4 +42,4 @@ jobs:
       - name: Delete the security group
         if: always()
         run: |
-          aws ec2 revoke-security-group-ingress --group-id ${{ env.SECURITY_GROUP_ID }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ip }}/32
+          aws ec2 revoke-security-group-ingress --group-id ${{ secrets.SECURITY_GROUP }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ip }}/32
