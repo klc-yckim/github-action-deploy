@@ -21,16 +21,9 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           role-to-assume: ${{ secrets.IAM_ROLE }}
 
-      - name: Create a security group with a random name
-        id: create-security-group
-        run: |
-          RANDOM_NAME=deploy-$(date +%s)
-          GROUP_ID=$(aws ec2 create-security-group --group-name $RANDOM_NAME --description "Temporary security group for deployment" --query 'GroupId' --output text)
-          echo "::set-output name=group_id::$GROUP_ID"
-
       - name: Add SSH access to the security group
         run: |
-          aws ec2 authorize-security-group-ingress --group-id ${{ steps.create-security-group.outputs.group_id }} --protocol tcp --port 22 --cidr $(curl https://ifconfig.me)/32
+          aws ec2 authorize-security-group-ingress --group-id ${{ secrets.SECURITY_GROUP }} --protocol tcp --port 22 --cidr $(curl https://ifconfig.me)/32
 
       - name: Deploy application
         env:
@@ -43,4 +36,4 @@ jobs:
       - name: Delete the security group
         if: always()
         run: |
-          aws ec2 delete-security-group --group-id ${{ steps.create-security-group.outputs.group_id }}
+          aws ec2 revoke-security-group-ingress --group-id ${{ env.SECURITY_GROUP_ID }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ip }}/32
