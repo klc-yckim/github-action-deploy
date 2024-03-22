@@ -1,0 +1,40 @@
+name: Deploy with SSH access
+on:
+  push:
+    branches:
+      - main
+env:
+  AWS_REGION: ap-northeast-2
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.IAM_ROLE }}
+
+      - name: Create a security group with a random name
+        id: create-security-group
+        run: |
+          RANDOM_NAME=deploy-$(date +%s)
+          GROUP_ID=$(aws ec2 create-security-group --group-name $RANDOM_NAME --description "Temporary security group for deployment" --query 'GroupId' --output text)
+          echo "::set-output name=group_id::$GROUP_ID"
+
+      - name: Add SSH access to the security group
+        run: |
+          aws ec2 authorize-security-group-ingress --group-id ${{ steps.create-security-group.outputs.group_id }} --protocol tcp --port 22 --cidr $(curl https://ifconfig.me)/32
+
+      - name: Deploy application
+        env:
+          PEM_KEY: ${{ secrets.PEM_KEY }}
+        run: |
+          echo $PEM_KEY > connect.pem
+          scp -i connect.pem ${{ secrets.USER}}@${{ secrets.HOST }} a .
+
+      - name: Delete the security group
+        if: always()
+        run: |
+          aws ec2 delete-security-group --group-id ${{ steps.create-security-group.outputs.group_id }}
