@@ -31,13 +31,14 @@ jobs:
           aws ec2 authorize-security-group-ingress --group-id ${{ secrets.SECURITY_GROUP }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ip }}/32
         continue-on-error: true
 
-      - name: Deploy application
-        env:
-          PEM_KEY: ${{ secrets.PEM_KEY }}
-        run: |
-          echo $PEM_KEY > washenjoy_key.pem
-          chmod 400 washenjoy_key.pem
-          scp -i washenjoy_key.pem -o StrictHostKeyChecking=no ${{ secrets.USER }}@${{ secrets.HOST }}:a .
+      - name: reload server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.PEM_KEY }}
+          script: |
+            echo "1234" > deploy_success.txt
 
       - name: Delete the security group
         if: always()
