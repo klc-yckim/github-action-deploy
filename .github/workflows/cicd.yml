@@ -35,8 +35,12 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-      - run: |
+
+      - name: Build with Gradle
+        working-directory: api
+        run: |
           ./gradlew build
+
       - name: Copy the jar file to the server
         uses: appleboy/scp-action@master
         with:
